@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="shortcut icon" href="./favicon.ico">
+  <title>JIGSAW PUZZLE</title>
+
+  <link rel="stylesheet" href="./css/reset.css">
+  <link rel="stylesheet" href="./css/style.css">
+
+</head>
+<body>
+  <main>
+    <!-- canvasの描画 -->
+    <!-- <div id="canvas-wrap"> -->
+    <canvas class="canvas" width="600" height="400" style="border:1px solid #000000;"></canvas>
+      <!-- <canvas class="canvas" width="600" height="400" style="border:1px solid #000000;"></canvas> -->
+    <!-- </div> -->
+    <div id = "pieces-storage"></div>
+    <button>画像読込み</button>
+    <button onclick = "savePiecesInfo()">パズル保存</button>
+    <button onclick =  "loadPuzzle()">パズル復元</button>
+    <input type="checkbox" name ="auto-save">自動保存
+
+  <script src="./js/imgmove.js"></script>
+  <script src="./js/main.js"></script>
+  </main>
+</body>
+</html>
