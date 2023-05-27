@@ -2,6 +2,7 @@
  * ToDo
  *
  * 説明を追加
+ * z-indexのルーチン・保管
  * ピースの形
  * 完成判定
  * タイマー
@@ -26,7 +27,7 @@ const PIECES_ID = 'pieces-storage';
 
 // ピース数定義
 const PIECE_NUMBER = {
-  P6 : {horizontal : 3 , vertical : 2},//テスト用
+  P4 : {horizontal : 2 , vertical : 2},//テスト用
   P12 : {horizontal : 4 , vertical : 3},
   P48 : {horizontal : 8 , vertical : 6},
   P96 : {horizontal : 12 , vertical : 8},
@@ -37,7 +38,7 @@ const PIECE_NUMBER = {
 };
 
 // 総ピース数、後で変更できるようにする。
-let totalPiece = 'P6';
+let totalPiece = 'P4';
 
 // HTMLのcanvas要素
 const cvs = document.querySelector("canvas");
@@ -187,18 +188,18 @@ class sliceImage{
   }
 
   initCVS(){
-    let element = document.getElementsByClassName('canvas-wrap');
+    //let element = document.getElementsByClassName('canvas-wrap');
     //element.className = 'canvas-wrap';
     //console.log(element.style.width);
     //element.height = "400px";
     //let element = document.getElementsByClassName('canvas-wrap');
     //let element = document.getElementById('pieceInfo');
-      element.style = "width:600px;height:400px";
+    //element.style = "width:600px;height:400px";
     //element.style.height = "400px";
-    console.log(element);
+    //console.log(element);
     //console.log(element)
-    // this.cvs.width = CANVAS_WIDTH;
-    // this.cvs.height = CANVAS_HEIGHT;
+    this.cvs.width = CANVAS_WIDTH;
+    this.cvs.height = CANVAS_HEIGHT;
     this.ctx.clearRect(0,0,cvs.width,cvs.height);
   }
 }
