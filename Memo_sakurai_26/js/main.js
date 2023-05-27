@@ -1,14 +1,14 @@
 /*******************
  * ToDo
  *
+ * 説明を追加
  * ピースの形
- * ピースの回転
  * 完成判定
- * canvasの大きさ
+ * タイマー
+ * canvasの大きさを画面可変にする
  * 画像の読み込み
  * 複数のセーブデータ
  */
-
 
 'use strict';
 
@@ -16,11 +16,16 @@
 const IMAGE_PATH = [
   './img/1.jpg',
 ]
+
+const CANVAS_WIDTH = 600;
+const CANVAS_HEIGHT = CANVAS_WIDTH / 3 * 2;
+
 // ピースを表示するdivID
 const PIECES_ID = 'pieces-storage';
 
 // ピース数定義
 const PIECE_NUMBER = {
+  P6 : {horizontal : 3 , vertical : 2},//テスト用
   P12 : {horizontal : 4 , vertical : 3},
   P48 : {horizontal : 8 , vertical : 6},
   P96 : {horizontal : 12 , vertical : 8},
@@ -31,7 +36,7 @@ const PIECE_NUMBER = {
 };
 
 // 総ピース数、後で変更できるようにする。
-let totalPiece = 'P12';
+let totalPiece = 'P6';
 
 // HTMLのcanvas要素
 const cvs = document.querySelector("canvas");
@@ -54,6 +59,7 @@ class sliceImage{
     this.cvs = cvs;
     this.ctx = this.cvs.getContext("2d");
     this.pieceNumber = pieceNumber;
+    this.initCVS();
     this.calPieceSize();
     this.piecesImg = [];
     this.imageScale();
@@ -76,7 +82,6 @@ class sliceImage{
       height : this.image.height / this.cvs.height
     }
   }
-
 
   //ピースの大きさを計算
   calPieceSize(){
@@ -111,6 +116,9 @@ class sliceImage{
       let img = document.createElement("img")
       img.src = value;
       img.addEventListener("mousedown", dragStart);//mousedownイベントを各img要素に仕込む
+      img.addEventListener("contextmenu", rotateImg);//右クリックは回転
+      img.setAttribute("oncontextmenu" , "return false");//画像上は右クリックメニュー禁止
+      
       img.ondragstart = () => false;//ondragイベントがmousedownイベントと競合するため無効にする。
       piecesContents.appendChild(img);
     }
@@ -124,23 +132,26 @@ class sliceImage{
     for(let element of piecesElement){
       rand.x = Math.trunc(Math.random() * 500);
       rand.y = Math.trunc(Math.random() * 300);
+      rand.d = 90 * Math.trunc(Math.random() * 4);
       element.style.left = `${rand.x}px`;
       element.style.top = `${rand.y}px`;
+      element.style.transform = `rotate(${rand.d}deg)`;
     }
   }
 
   //画像の位置情報を取得
   getImgPos(elementID){
     let piecesElement = document.getElementById(elementID).children;
-    let index = 0;
+    let i = 0;
     let posInfo = [];
 
     for(let element of piecesElement){
-      posInfo[index] = {
+      posInfo[i] = {
         posX : element.style.left,
-        posY : element.style.top
+        posY : element.style.top,
+        rotate : element.style.transform
       }
-      index++;
+      i ++;
     }
     return posInfo;
   }
@@ -159,7 +170,8 @@ class sliceImage{
     for(let element of piecesElement){
       element.style.left = saveData[i].posX;
       element.style.top = saveData[i].posY;
-      i++
+      element.style.transform = saveData[i].rotate;
+      i ++;
     }
 
   }
@@ -174,11 +186,20 @@ class sliceImage{
   }
 
   initCVS(){
-    this.cvs.width = 600;
-    this.cvs.height = 400;
+    let element = document.getElementsByClassName('canvas-wrap');
+    //element.className = 'canvas-wrap';
+    //console.log(element.style.width);
+    //element.height = "400px";
+    //let element = document.getElementsByClassName('canvas-wrap');
+    //let element = document.getElementById('pieceInfo');
+      element.style = "width:600px;height:400px";
+    //element.style.height = "400px";
+    console.log(element);
+    //console.log(element)
+    // this.cvs.width = CANVAS_WIDTH;
+    // this.cvs.height = CANVAS_HEIGHT;
     this.ctx.clearRect(0,0,cvs.width,cvs.height);
   }
-
 }
 
 // グローバルでインスタンス生成
@@ -213,7 +234,10 @@ function savePiecesInfo(){
 function loadPuzzle(){
 
   let saveData = JSON.parse(localStorage.getItem('pieceInfo'));
-  //console.log(saveData);
-  slice.loadImg(PIECES_ID, saveData);
-
+  if(saveData === null){
+    confirm('ローカルストレージに未保存です。')//エラー処理は後で変更する。
+    return;
+  } else {
+    slice.loadImg(PIECES_ID, saveData);
+  }
 }

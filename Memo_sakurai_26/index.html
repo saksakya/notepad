@@ -13,16 +13,16 @@
 </head>
 <body>
   <main>
-    <!-- canvasの描画 -->
-    <!-- <div id="canvas-wrap"> -->
-    <canvas class="canvas" width="600" height="400" style="border:1px solid #000000;"></canvas>
-      <!-- <canvas class="canvas" width="600" height="400" style="border:1px solid #000000;"></canvas> -->
-    <!-- </div> -->
+
+  <div class = "canvas-wrap"  style = "width : 1000px; height : 800px">
+    <canvas class="canvas"  style="border:1px solid #000000;"></canvas>
     <div id = "pieces-storage"></div>
-    <button>画像読込み</button>
-    <button onclick = "savePiecesInfo()">パズル保存</button>
-    <button onclick =  "loadPuzzle()">パズル復元</button>
-    <input type="checkbox" name ="auto-save">自動保存
+  </div>
+
+  <button>画像読込み</button>
+  <button onclick = "savePiecesInfo()">パズル保存</button>
+  <button onclick =  "loadPuzzle()">パズル復元</button>
+  <input type="checkbox" name ="auto-save">自動保存
 
   <script src="./js/imgmove.js"></script>
   <script src="./js/main.js"></script>
