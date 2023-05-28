@@ -1,7 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=M+PLUS+1p:wght@500&display=swap');
-
 body{
-  margin:15px;
+  margin:10px;
   font-family: 'M PLUS 1p', sans-serif;
 }
 
@@ -18,35 +16,100 @@ body{
 #pieces-storage{
   top: 0px;
   left : 0px;
-  width : 400px;
+  width : 440px;
   height : 600px;
+  border: 1px solid;
+  margin-left: 5px;
 }
 
 #pieces-storage img{
   position:absolute;
 }
 
-button , label{
+#timer{
+  font-size: 20px;
+  margin: 5px 0px;
+}
+
+#timerNum{
+  color: #6495ed ;
+  margin:0 15px 0 0;
+}
+
+#timer > button, button, label{
   display : inline-block;
-  background-color : #00a2f5;
+  background-color : #6495ed;
   color: white;
   font-size: 14px;
   border : none;
   border-radius : 5px;
-  width : 140px;
-  height: 50px;
-  line-height : 50px;
-  font-weight : bold;
+  width : 100px;
+  height: 30px;
+  line-height : 30px;
   text-align : center;
   vertical-align : middle;
+  margin:0 10px 0 0;
 }
 
-button:hover, label:hover{
+#timer button:hover {
   cursor:pointer;
   background-color: #00537e;
 }
 
-/* ファイル選択のラベル非表示 */
+#slot , #totalPiece{
+  display : inline-block;
+  font-size: 14px;
+  border : 1px solid;
+  border-radius : 5px;
+  width : 140px;
+  height: 30px;
+  line-height : 30px;
+  text-align : center;
+  vertical-align : middle;
+  margin:0 10px 0 0
+}
+
+#timer > form{
+  font-size: 14px;
+}
+
+form{
+  display: inline;
+}
+
+h1{
+  margin-top: 30px;
+  margin-bottom: 10px;
+  font-size: 18px;
+}
+
+.totalP{
+  margin-left: 20px;
+}
+
+#totalPiece{
+  width : 100px;
+  height: 25px;
+}
+
+label{
+  background-color: #3eb370;
+  width : 120px;
+}
+
 label > input{
   display:none
 }
+
+.randP{
+  background-color: #3eb370;
+  width : 120px;
+}
+
+label:hover, .randP:hover{
+  cursor:pointer;
+  background-color: #246640;
+}
+
+
+

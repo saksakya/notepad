@@ -1,17 +1,19 @@
 /*******************
  * ToDo
  *
- * ピースの形
- * タイマー
- * canvasの大きさを調整する
+ * 時間の測定
+ * 時間の保存
  * 完成判定
+ * How to Play
  *
  * !!!優先度低!!!
- * 説明を追加
- * セーブデータを5個ぐらい保管できるようにする。
  * confirmWindowを自作
- * 画像の透明部分は選択できないようにできないか
- *
+ * 
+ * !!!100%不可能!!!
+ *  画像の範囲選択
+ *  画像の結合
+ *  画像の透明部分は選択できないようにできないか
+ * 
  */
 
 'use strict';
@@ -25,6 +27,7 @@ const IMAGE_PATH = [
   './img/Sakura.webp',
 ];
 
+// canvasサイズ(パズルサイズ)
 const CANVAS_WIDTH = 800;
 const CANVAS_HEIGHT = 600;
 
@@ -35,6 +38,7 @@ const PIECES_ID = 'pieces-storage';
 const PIECE_NUMBER = {
   P4 : {horizontal : 2 , vertical : 2},//テスト用
   P12 : {horizontal : 4 , vertical : 3},
+  P24 : {horizontal : 6 , vertical : 4},
   P48 : {horizontal : 8 , vertical : 6},
   P96 : {horizontal : 12 , vertical : 8},
   P192 : {horizontal : 16 , vertical : 12},
@@ -43,7 +47,7 @@ const PIECE_NUMBER = {
   P600 : {horizontal : 30 , vertical : 20},
 };
 
-// 総ピース数、後で変更できるようにする。
+// 総ピース数、初期値テスト用
 let totalPiece = 'P12';
 
 // ローカルストレージの名前の定義
@@ -55,6 +59,22 @@ const LSkeyName = [
 // HTMLのcanvas要素
 const cvs = document.querySelector("canvas");
 const ctx = cvs.getContext("2d");
+
+// howToPlayの文字列
+const DESCRIPTION_MESSAGE = [
+  '- How to PLAY - ',
+  '■ピース数を選択して、「画像を選択」ボタンで好きな画像を読み込むと',
+  'パズルが生成されます。',
+  '■ピース数を選択して、「画像を選択」ボタンを押すと、サーバーに保管されている4つの画像からランダムでパズルを生成します。',
+  'OPTION',
+  '「SAVE」ボタンを押すと、現在の進捗状況を保存できます。',
+  '「LOAD」ボタンを押すと、保存した所から再開できます。',
+  '「自動保存」にチェックを入れると現在の状況が、自動で保存されます。',
+  '「ヒント」にチェックを入れるとパズル配置ウィンドにヒントが表示されます。',
+];
+
+//フォントサイズ置き換え用
+const match = /(?<value>\d+\.?\d*)/;
 
 //クラスインスタンス生成用グローバル変数
 let imgInstance = null;
@@ -152,6 +172,15 @@ class sliceImage{
     let trimWidth = width / 5 * 2;      // ピースの円弧開始位置(幅)
     let trimHeight = height / 5 * 2;    // ピースの円弧開始位置(高さ)
     let c1Width = width / 4 * 1;        // 制御点1(w)
+
+    //乱数を使って、制御点に揺らぎを持たせたかったが、受け側と揺らぎを合わせるために配列に保管の必要あり
+    //時間がなくて断念
+    // let c1Width = () => {
+    //   let tempRand
+    //   tempRand = 1.05 - Math.random() / 10 //0.95-1.05の揺らぎを持たせる
+    //   return width / 4 * 1 * tempRand;
+    // }
+
     let c1Height = height / 3 * 1;      // 制御点1(h)
     let c2Width = width / 3 * 1;        // 制御点2(w)
     let c2Height = height / 4 * 1;      // 制御点2(h)
@@ -311,6 +340,7 @@ class sliceImage{
   //保存された情報を元に画像を復元
   loadImg(elementID, saveData){
     this.removeChild(elementID);
+    this.piecesImg = []; //配列初期化
     for(let i = 0; i < saveData.length; i++)
       this.piecesImg[i] = saveData[i].url;
 
@@ -342,16 +372,6 @@ class sliceImage{
   }
 
   initCVS(){
-    //let element = document.getElementsByClassName('canvas-wrap');
-    //element.className = 'canvas-wrap';
-    //console.log(element.style.width);
-    //element.height = "400px";
-    //let element = document.getElementsByClassName('canvas-wrap');
-    //let element = document.getElementById('pieceInfo');
-    //element.style = "width:600px;height:400px";
-    //element.style.height = "400px";
-    //console.log(element);
-    //console.log(element)
     this.cvs.width = CANVAS_WIDTH;
     this.cvs.height = CANVAS_HEIGHT;
     this.ctx.clearRect(0,0,cvs.width,cvs.height);
@@ -377,7 +397,8 @@ async function drawInitImage(){
 function randomImgPuzzle(){
   if (confirm('作成中のパズルがリセットされますが、呼び出しますか？') === true){
     let rand = Math.trunc(Math.random() * (IMAGE_PATH.length - 1)) + 1;
-    totalPiece = `P${document.difficulty.totalPieceNum.value}`;
+
+    totalPiece = `P${document.querySelector("#totalPiece").value}`;
 
     imgInstance = new sliceImage({
       imageSource : IMAGE_PATH[rand],
@@ -396,7 +417,7 @@ addEventListener("DOMContentLoaded", () => {
     const reader = new FileReader();
 
     reader.onload = e => {
-      totalPiece = `P${document.difficulty.totalPieceNum.value}`;
+      totalPiece = `P${document.querySelector("#totalPiece").value}`;
       imgInstance = new sliceImage({
         imageSource : e.target.result,
         cvs:cvs,
@@ -424,32 +445,51 @@ addEventListener('DOMContentLoaded', () => {
 });
 
 //ローカルストレージにパズル情報を保存
-function savePiecesInfo(){
+function savePiecesInfo(autoSave = false){
   let pieceData = imgInstance.getImgPos(PIECES_ID);
   let originalData = imgInstance.image.src;
+  let key0 = 0;
+  let key1 = 0;
+  let slotData = document.querySelector("#slot");
 
-  if(document.form1.autoSave.checked === true || confirm('パズルを保存しますか?') === true){
+  if(autoSave === true){
+    key0 = `${LSkeyName[0]}100`
+    key1 = `${LSkeyName[1]}100`
+  } else if(slotData.value === ""){
+    confirm('保存スロットが選択されていません。')
+    return;
+  } else if(slotData.value === "100"){
+    confirm('Auto Saveは自動保存専用です。')
+    return;
+  } else {
+    key0 = `${LSkeyName[0]}${slotData.value}`
+    key1 = `${LSkeyName[1]}${slotData.value}`
+  }
+
+  if(autoSave === true || confirm(`SLOT:0${slotData.value}に上書き保存しますか?`) === true){
     for (let i = 0; i < pieceData.length; i++) pieceData[i].url = imgInstance.piecesImg[i];
-    localStorage.setItem(LSkeyName[1],JSON.stringify(pieceData));
-    localStorage.setItem(LSkeyName[0],originalData);
+    localStorage.setItem(key1,JSON.stringify(pieceData));
+    localStorage.setItem(key0,originalData);
   }
 }
 
 //ローカルストレージからパズル情報を復元
 async function loadPuzzle(){
+  let slotData = document.querySelector("#slot");
+  let pieceData = JSON.parse(localStorage.getItem(`${LSkeyName[1]}${slotData.value}`));
+  let originalData = localStorage.getItem(`${LSkeyName[0]}${slotData.value}`);
 
-  let pieceData = JSON.parse(localStorage.getItem(LSkeyName[1]));
-  let originalData = localStorage.getItem(LSkeyName[0]);
-
-  if(pieceData === null){
-    confirm('ローカルストレージに未保存です。')//エラー処理は後で変更する。
+  if(slotData.value === ""){
+    confirm('スロットを選択してください。')
+    return;
+  } else if(pieceData === null){
+    confirm('データ未保存です。')
     return;
   } else if (confirm('データを呼び出しますか?') === true){
     imgInstance.loadImg(PIECES_ID, pieceData);
     imgInstance.image.src = originalData;
 
     //ボタン数値変更
-    document.difficulty.totalPieceNum.value = pieceData.length;
     document.form1.hint.checked = false;
 
     //img srcで画像を読み込んだ瞬間、下記記載なくてもonloadイベントが発火してしまう。意図的にawaitすることで、描写後初期化している。
@@ -466,5 +506,15 @@ async function drawInitImage(){
   imgInstance.drawPieces(PIECES_ID);
   imgInstance.randLayout(PIECES_ID);
 }
-
 //drawInitImage();
+
+//テスト用関数2
+// function howToPlay(){
+//   ctx.font = '40px "M PLUS 1p", sans-serif';
+//   ctx.fillText(DESCRIPTION_MESSAGE[0] , 50 , 100)
+//   ctx.font = ctx.font.replace(match, 20)
+  
+//   ctx.fillText(DESCRIPTION_MESSAGE[1] , 80 , 160)
+// }
+
+// howToPlay();

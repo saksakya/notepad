@@ -7,6 +7,10 @@
   <link rel="shortcut icon" href="./favicon.ico">
   <title>JIGSAW PUZZLE</title>
 
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+1p:wght@500&display=swap" rel="stylesheet">
+
   <link rel="stylesheet" href="./css/reset.css">
   <link rel="stylesheet" href="./css/style.css">
 
@@ -19,36 +23,41 @@
     <div id = "pieces-storage"></div>
   </div>
 
+  <div id="timer">
+    <span>Time : </span>
+    <span id = "timerNum">00:00:00</span>
+    <button>START</button>
+    <button>STOP</button>
+    <button onclick = "savePiecesInfo()">SAVE</button>
+    <button onclick =  "loadPuzzle()">LOAD</button>
+    <!-- ローカルストレージの容量的に3スロットが限界(余裕を持たせて2) -->
+    <select id = "slot">
+      <option value = "" selected disabled>- SAVE SLOTS- </option>
+      <option value = "1">SLOT : 01</option>
+      <option value = "100">Auto Save</option>
+    </select>
+    <form name = "form1" >
+      <input type="checkbox" name ="hint">HINTを表示
+    </form>
+  </div>
+
+
+  <h1>パズル生成</h1>
+  <span class = "totalP">総ピース数：</span>
+  <select id = "totalPiece" name ="testTest">
+    <option value = "4">4ピース</option>
+    <option value = "12">12ピース</option>
+    <option value = "24" selected>24ピース</option>
+    <option value = "48">48ピース</option>
+    <option value = "96">96ピース</option>
+    <option value = "192">192ピース</option>
+    <option value = "300">300ピース</option>
+    <option value = "500">500ピース</option>
+    <option value = "600">600ピース</option>
+  </select>
+
   <label>画像を選択<input type = "file" id ="selectImg" accept="image/*"></label>
-  <button onclick = "randomImgPuzzle()">ランダムで作成</button>
-  <button onclick = "savePiecesInfo()">SAVE</button>
-  <button onclick =  "loadPuzzle()">LOAD</button>
-
-  <form name = "form1">
-    <input type="checkbox" name ="autoSave">自動保存オン
-    <input type="checkbox" name ="hint">HINT表示
-  </form>
-
-  <form name = "difficulty">
-    <input type="radio" name ="totalPieceNum" value = "4" checked>4ピース
-    <input type="radio" name ="totalPieceNum" value = "12">12ピース
-    <input type="radio" name ="totalPieceNum" value = "48">48ピース
-    <input type="radio" name ="totalPieceNum" value = "96">96ピース
-    <input type="radio" name ="totalPieceNum" value = "192">192ピース
-    <input type="radio" name ="totalPieceNum" value = "300">300ピース
-    <input type="radio" name ="totalPieceNum" value = "500">500ピース
-    <input type="radio" name ="totalPieceNum" value = "600">600ピース
-  </form>
-
-  <h1>★How to play</h1>
-  <p>■ピース数を選択して、「画像を選択」ボタンで好きな画像を読み込むと、パズルが生成されます。</p>
-  <p>■ピース数を選択して、「画像を選択」ボタンを押すと、サーバーに保管されている4つの画像からランダムでパズルを生成します。</p>
-  <p>■ OPTION</p>
-  <p>「SAVE」ボタンを押すと、現在の進捗状況を保存できます。</p>
-  <p>「LOAD」ボタンを押すと、保存した所から再開できます。</p>
-  <p>「自動保存」にチェックを入れると現在の状況が、自動で保存されます。</p>
-  <p>「ヒント」にチェックを入れるとパズル配置ウィンドにヒントが表示されます。</p>
-
+  <button class = "randP" onclick = "randomImgPuzzle()">ランダム画像</button>
 
   <script src="./js/main.js"></script>
   <script src="./js/imgmove.js"></script>

@@ -33,11 +33,8 @@ function moveAt(e){
 function dragEnd(e){
   if(target){
     target = null;
-
-    if(document.form1.autoSave.checked === true){
-      savePiecesInfo();
-      // console.log('saveFlag')
-    }
+    savePiecesInfo(true);
+    //console.log('autosaveFlag')
   }
 }
 
