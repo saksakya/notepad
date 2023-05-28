@@ -2,14 +2,15 @@
  * ToDo
  *
  * ピースの形
- * 完成判定
  * タイマー
- * canvasの大きさを画面可変にする
+ * canvasの大きさを調整する
+ * 完成判定
  *
  * !!!優先度低!!!
  * 説明を追加
  * セーブデータを5個ぐらい保管できるようにする。
  * confirmWindowを自作
+ * 画像の透明部分は選択できないようにできないか
  *
  */
 
@@ -24,7 +25,7 @@ const IMAGE_PATH = [
   './img/Sakura.webp',
 ];
 
-const CANVAS_WIDTH = 600;
+const CANVAS_WIDTH = 1000;
 const CANVAS_HEIGHT = CANVAS_WIDTH / 3 * 2;
 
 // ピースを表示するdivID
@@ -43,7 +44,7 @@ const PIECE_NUMBER = {
 };
 
 // 総ピース数、後で変更できるようにする。
-let totalPiece = 'P4';
+let totalPiece = 'P12';
 
 // ローカルストレージの名前の定義
 const LSkeyName = [
@@ -135,6 +136,122 @@ class sliceImage{
       resolve();
     });
 }
+
+  //画像を分割して、imgURLを代入(ピース形状強化バージョン)
+  async strongSlice(elementID){
+
+    this.imageScale();
+    this.removeChild(elementID); //子要素初期化
+
+    //線を引く関数が分かりやすくするため、別の変数に代入
+    let width = this.pieceSize.width;   // ピースの幅
+    let height = this.pieceSize.height; // ピースの高さ
+    let bumpWidth = width / 25 * 7;
+    let bumpHeight = height / 25 * 7;
+
+    let trimWidth = width / 5 * 2;      // ピースの円弧開始位置(幅)
+    let trimHeight = height / 5 * 2;    // ピースの円弧開始位置(高さ)
+    let c1Width = width / 4 * 1;        // 制御点1(w)
+    let c1Height = height / 3 * 1;      // 制御点1(h)
+    let c2Width = width / 3 * 1;        // 制御点2(w)
+    let c2Height = height / 4 * 1;      // 制御点2(h)
+    let rightBump = [];                  // ピース右の凹凸(左隣判定用)
+    let bottomBump = [];                 // ピース下部の凹凸(下隣判定用)
+
+    //ピースの大きさ+ピースの出っ張り分の合計の大きさ
+    let grossWidth = width + bumpWidth * 2;
+    let grossHeight = height + bumpHeight * 2
+
+    //canvas要素をピースの大きさ+ピースの出っ張り分へ補正
+    this.cvs.width = grossWidth;
+    this.cvs.height = grossHeight;
+
+    for(let i = 0; i < this.pieceNumber.vertical; i ++){
+      for(let j = 0; j < this.pieceNumber.horizontal; j ++){
+    // for(let i = 0; i < 2; i ++){
+    //   for(let j = 0; j < 2; j ++){
+        //凹凸ランダム判定用
+        let rand = [];
+        for(let z = 0; z < 2; z++)
+          rand [z] = Math.trunc(Math.random() * 2);
+
+        this.ctx.save();
+        this.ctx.beginPath();
+        this.ctx.moveTo( bumpWidth , bumpHeight );
+
+        this.ctx.lineTo( trimWidth + bumpWidth, bumpHeight );
+
+        if(i === 0){
+          this.ctx.lineTo( width - trimWidth + bumpWidth, bumpHeight );
+        } else {
+          if(bottomBump[j] === false) c1Height *= -1 //凹凸逆転
+          this.ctx.bezierCurveTo(c1Width + bumpWidth , c1Height + bumpHeight, width - c1Width + bumpWidth, c1Height + bumpHeight,
+            width - trimWidth + bumpWidth, bumpHeight);
+          if(bottomBump[j] === false) c1Height *= -1 //変数内容元に戻す
+        }
+
+        this.ctx.lineTo( width + bumpWidth , bumpHeight );
+        this.ctx.lineTo( width + bumpWidth , trimHeight + bumpHeight);
+
+
+        if(j === this.pieceNumber.horizontal - 1){
+          this.ctx.lineTo( width + bumpWidth , height - trimHeight + bumpHeight );
+        } else {
+          if(rand[0] === 1) {
+            c2Width *= -1 //凹凸逆転
+            rightBump[j] = true;
+          } else {
+            rightBump[j] = false;
+          }
+          this.ctx.bezierCurveTo(width - c2Width + bumpWidth , c2Height + bumpHeight , width - c2Width +bumpWidth , height - c2Height + bumpHeight,
+            width + bumpWidth , height - trimHeight + bumpHeight);
+          if(rand[0] === 1) c2Width *= -1 //変数内容元に戻す
+        }
+
+        this.ctx.lineTo( width + bumpWidth , height + bumpHeight);
+        this.ctx.lineTo( width - trimWidth + bumpWidth, height + bumpHeight);
+
+        if(i === this.pieceNumber.vertical - 1){
+          this.ctx.lineTo( trimWidth + bumpWidth, height + bumpHeight);
+        } else {
+          if(rand[1] === 1) {
+            c1Height *= -1 //凹凸逆転
+            bottomBump[j] = true;
+          } else {
+            bottomBump[j] = false;
+          }
+          this.ctx.bezierCurveTo( width -c1Width + bumpWidth , height - c1Height + bumpHeight, c1Width + bumpWidth, height - c1Height + bumpHeight,
+            trimWidth + bumpWidth, height + bumpHeight);
+          if(rand[1] === 1) c1Height *= -1 //変数内容元に戻す
+        }
+
+        this.ctx.lineTo( bumpWidth , height + bumpHeight);
+        this.ctx.lineTo( bumpWidth , height -trimHeight + bumpHeight);
+
+        if(j === 0){
+          this.ctx.lineTo( bumpWidth, trimHeight + bumpHeight );
+        } else {
+          if(rightBump[j - 1] === false) c2Width *= -1 //凹凸逆転
+          this.ctx.bezierCurveTo( c2Width + bumpWidth , height - c2Height + bumpHeight, c2Width + bumpWidth, c2Height + bumpHeight,
+            bumpWidth, trimHeight + bumpHeight);
+          if(rightBump[j - 1] === false) c2Width *= -1 //変数内容元に戻す
+        }
+
+        this.ctx.lineTo( bumpWidth , bumpHeight );
+
+        this.ctx.clip();
+
+          this.ctx.drawImage(this.image, (width * j - bumpWidth) * this.scale.width ,(height * i - bumpHeight) * this.scale.height,
+            grossWidth * this.scale.width, grossHeight * this.scale.height, 0 , 0 , grossWidth, grossHeight);
+
+            this.piecesImg.push(cvs.toDataURL());
+        //変数等初期化
+        this.ctx.restore();
+        this.ctx.clearRect(0,0,grossWidth,grossHeight);
+      }
+    }
+    this.initCVS();
+  }
 
   /**
    * 分割した画像をhtml要素へ表示
@@ -237,7 +354,7 @@ class sliceImage{
   }
 }
 
-// グローバルでインスタンス生成　これがないと、cvsが初期化されない。後で要変更
+// グローバルでインスタンス生成 これがないと、cvsが初期化されない。後で要変更
 imgInstance = new sliceImage({
   imageSource : IMAGE_PATH[0],
   cvs:cvs,
@@ -247,7 +364,7 @@ imgInstance = new sliceImage({
 // main関数
 async function drawInitImage(){
   await imgInstance.drawOneImage();
-  await imgInstance.slice(PIECES_ID);
+  await imgInstance.strongSlice(PIECES_ID);
   imgInstance.drawPieces(PIECES_ID);
   imgInstance.randLayout(PIECES_ID);
 }
@@ -256,6 +373,7 @@ async function drawInitImage(){
 function randomImgPuzzle(){
   if (confirm('作成中のパズルがリセットされますが、呼び出しますか？') === true){
     let rand = Math.trunc(Math.random() * (IMAGE_PATH.length - 1)) + 1;
+    totalPiece = `P${document.difficulty.totalPieceNum.value}`;
 
     imgInstance = new sliceImage({
       imageSource : IMAGE_PATH[rand],
@@ -264,7 +382,6 @@ function randomImgPuzzle(){
     });
     document.form1.hint.checked = false;
     drawInitImage();
-
   }
 }
 
@@ -275,6 +392,7 @@ addEventListener("DOMContentLoaded", () => {
     const reader = new FileReader();
 
     reader.onload = e => {
+      totalPiece = `P${document.difficulty.totalPieceNum.value}`;
       imgInstance = new sliceImage({
         imageSource : e.target.result,
         cvs:cvs,
@@ -325,10 +443,24 @@ async function loadPuzzle(){
   } else if (confirm('データを呼び出しますか?') === true){
     imgInstance.loadImg(PIECES_ID, pieceData);
     imgInstance.image.src = originalData;
-    //画像を読み込んだ途端、下記記載なくてもonloadイベントは発火してしまう。意図的にawaitすることで、描写後初期化している。
+
+    //ボタン数値変更
+    document.difficulty.totalPieceNum.value = pieceData.length;
     document.form1.hint.checked = false;
+
+    //img srcで画像を読み込んだ瞬間、下記記載なくてもonloadイベントが発火してしまう。意図的にawaitすることで、描写後初期化している。
     await imgInstance.drawOneImage();
     imgInstance.initCVS();
-
   }
 }
+
+
+// テスト用関数
+async function drawInitImage(){
+  await imgInstance.drawOneImage();
+  await imgInstance.strongSlice(PIECES_ID);
+  imgInstance.drawPieces(PIECES_ID);
+  imgInstance.randLayout(PIECES_ID);
+}
+
+//drawInitImage();
