@@ -15,17 +15,33 @@
   <main>
 
   <!-- /<div class = "canvas-wrap"  style = "width : 600px; height : 400px"> -->
-    <canvas class="canvas"  style="border:1px solid #000000;"></canvas>
+    <canvas class="canvas"  style="border:1px solid #000000;"></canvas><br>
     <div id = "pieces-storage"></div>
   <!-- </div> -->
 
-  <button>画像読込み</button>
-  <button onclick = "savePiecesInfo()">パズル保存</button>
-  <button onclick =  "loadPuzzle()">パズル復元</button>
-  <input type="checkbox" name ="auto-save">自動保存
+  <label>画像を選択<input type = "file" id ="selectImg" accept="image/*"></label>
+  <button onclick = "randomImgPuzzle()">ランダムで作成</button>
+  <button onclick = "savePiecesInfo()">SAVE</button>
+  <button onclick =  "loadPuzzle()">LOAD</button>
 
-  <script src="./js/imgmove.js"></script>
+  <form name = "form1">
+    <input type="checkbox" name ="autoSave">自動保存オン
+    <input type="checkbox" name ="hint">HINT表示
+  </form>
+
+  <form name = "difficulty">
+    <input type="radio" name ="totalPieceNum" value = "4" checked>4ピース
+    <input type="radio" name ="totalPieceNum" value = "12">12ピース
+    <input type="radio" name ="totalPieceNum" value = "48">48ピース
+    <input type="radio" name ="totalPieceNum" value = "96">96ピース
+    <input type="radio" name ="totalPieceNum" value = "192">192ピース
+    <input type="radio" name ="totalPieceNum" value = "300">300ピース
+    <input type="radio" name ="totalPieceNum" value = "500">500ピース
+    <input type="radio" name ="totalPieceNum" value = "600">600ピース
+  </form>
+
   <script src="./js/main.js"></script>
+  <script src="./js/imgmove.js"></script>
   </main>
 </body>
 </html>

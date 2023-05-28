@@ -3,6 +3,7 @@
 //移動に使用するためのグローバル変数
 let startX = 0;
 let startY = 0;
+let zIndexNum = 50;
 let target = null;
 
 function dragStart(e){
@@ -12,8 +13,7 @@ function dragStart(e){
     startX = e.pageX - e.target.offsetLeft;
     startY = e.pageY - e.target.offsetTop;
     target = e.target;
-    //console.log(target);
-    target.style.zIndex = 300;
+    target.style.zIndex = zIndexNum ++;
     //let shiftX = event.clientX - ball.getBoundingClientRect().left;
     //let shiftY = event.clientY - ball.getBoundingClientRect().top;
     //target.style.position = 'absolute'
@@ -32,14 +32,20 @@ function moveAt(e){
 // 移動後に初期化
 function dragEnd(e){
   if(target){
-    target.style.zIndex = 200;
     target = null;
+
+    if(document.form1.autoSave.checked === true){
+      savePiecesInfo();
+      // console.log('saveFlag')
+    }
   }
 }
 
 // 画像を右に回転
 function rotateImg(e){
   if(e.button === 2){
+    if(e.target.style.zIndex != zIndexNum) zIndexNum++;
+    e.target.style.zIndex = zIndexNum;
     let rotate = Number(e.target.style.transform.replace(/[^0-9]/g, ''));
     rotate += 90;
     if(rotate >= 360) rotate -= 360;
@@ -47,7 +53,7 @@ function rotateImg(e){
   }
 }
 
-// mousemove でボールを移動する
+// mousemove で移動
 document.addEventListener("mousemove", moveAt);
 // 移動終了
 document.addEventListener("mouseup",dragEnd);

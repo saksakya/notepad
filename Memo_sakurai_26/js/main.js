@@ -1,23 +1,28 @@
 /*******************
  * ToDo
  *
- * 説明を追加
- * z-indexのルーチン・保管
  * ピースの形
  * 完成判定
  * タイマー
- * 確認ログ
  * canvasの大きさを画面可変にする
- * 画像の読み込み
- * 複数のセーブデータ
+ *
+ * !!!優先度低!!!
+ * 説明を追加
+ * セーブデータを5個ぐらい保管できるようにする。
+ * confirmWindowを自作
+ *
  */
 
 'use strict';
 
-// 画像パスの定義
+// パズル用の画像パスの定義
 const IMAGE_PATH = [
-  './img/1.jpg',
-]
+  './img/dummy.png',
+  './img/America.jpg',
+  './img/DRS.jpg',
+  './img/GOG.jpeg',
+  './img/Sakura.webp',
+];
 
 const CANVAS_WIDTH = 600;
 const CANVAS_HEIGHT = CANVAS_WIDTH / 3 * 2;
@@ -40,19 +45,28 @@ const PIECE_NUMBER = {
 // 総ピース数、後で変更できるようにする。
 let totalPiece = 'P4';
 
+// ローカルストレージの名前の定義
+const LSkeyName = [
+  'originalImg', //オリジナルの画像
+  'pieceData'    //ピースの座標・URL情報
+]
+
 // HTMLのcanvas要素
 const cvs = document.querySelector("canvas");
 const ctx = cvs.getContext("2d");
 
+//クラスインスタンス生成用グローバル変数
+let imgInstance = null;
+
 //タイマの定義(現状不要)
-//let sleep = time => new Promise(resolve => setTimeout(resolve, time));
+let sleep = time => new Promise(resolve => setTimeout(resolve, time));
 
 /**************************************************************************
  * イメージを分割して描画するクラス
  *************************************************************************/
 class sliceImage{
   constructor({
-    imageSource,
+    imageSource = IMAGE_PATH[0],
     cvs,
     pieceNumber,
   }){
@@ -64,7 +78,7 @@ class sliceImage{
     this.initCVS();
     this.calPieceSize();
     this.piecesImg = [];
-    this.imageScale();
+    //this.imageScale();ここで初期化しようとすると、widthとheightが未取得のことがあるため没 slice内で分割時に初期化
   }
 
   // 非同期でパズル用画像1枚を読み込み
@@ -77,36 +91,50 @@ class sliceImage{
     });
   }
 
+  //ヒント表示(背景に薄っすらオリジナル画像を表示)
+  async hint(){
+    ctx.globalAlpha = 0.4;
+    //console.log(imgInstance.image.src)
+    this.ctx.drawImage(this.image,0,0,this.cvs.width,this.cvs.height);
+    ctx.globalAlpha = 1;
+  }
+
   //画像サイズとcanvasサイズの比率を計算
   imageScale(){
     this.scale ={
-      width : this.image.width / this.cvs.width,
-      height : this.image.height / this.cvs.height
+      width : this.image.width / CANVAS_WIDTH,
+      height : this.image.height / CANVAS_HEIGHT
     }
   }
 
   //ピースの大きさを計算
   calPieceSize(){
     this.pieceSize = {
-      width : cvs.width / this.pieceNumber.horizontal,
-      height : cvs.height / this.pieceNumber.vertical
+      width : CANVAS_WIDTH / this.pieceNumber.horizontal,
+      height : CANVAS_HEIGHT / this.pieceNumber.vertical
     };
   }
 
   //画像を分割して、imgURLを代入
-  slice(){
-    this.cvs.width = this.pieceSize.width;
-    this.cvs.height = this.pieceSize.height;
+  async slice(elementID){
 
-    for(let i = 0; i < this.pieceNumber.vertical; i ++){
-      for(let j = 0; j < this.pieceNumber.horizontal; j++){
-        this.ctx.drawImage(this.image,this.pieceSize.width * this.scale.width * j,this.pieceSize.height * this.scale.height * i,
-          this.pieceSize.width * this.scale.width,this.pieceSize.height * this.scale.height,0,0,this.pieceSize.width,this.pieceSize.height);
-        this.piecesImg.push(cvs.toDataURL());
+    return new Promise(resolve => {
+      this.imageScale();
+      this.removeChild(elementID);
+      this.cvs.width = this.pieceSize.width;
+      this.cvs.height = this.pieceSize.height;
+
+      for(let i = 0; i < this.pieceNumber.vertical; i ++){
+        for(let j = 0; j < this.pieceNumber.horizontal; j++){
+          this.ctx.drawImage(this.image,this.pieceSize.width * this.scale.width * j,this.pieceSize.height * this.scale.height * i,
+            this.pieceSize.width * this.scale.width,this.pieceSize.height * this.scale.height,0,0,this.pieceSize.width,this.pieceSize.height);
+          this.piecesImg.push(cvs.toDataURL());
+        }
       }
-    }
-    this.initCVS();
-  }
+      this.initCVS();
+      resolve();
+    });
+}
 
   /**
    * 分割した画像をhtml要素へ表示
@@ -120,7 +148,7 @@ class sliceImage{
       img.addEventListener("mousedown", dragStart);//mousedownイベントを各img要素に仕込む
       img.addEventListener("contextmenu", rotateImg);//右クリックは回転
       img.setAttribute("oncontextmenu" , "return false");//画像上は右クリックメニュー禁止
-      
+
       img.ondragstart = () => false;//ondragイベントがmousedownイベントと競合するため無効にする。
       piecesContents.appendChild(img);
     }
@@ -151,7 +179,8 @@ class sliceImage{
       posInfo[i] = {
         posX : element.style.left,
         posY : element.style.top,
-        rotate : element.style.transform
+        rotate : element.style.transform,
+        zIndex : element.style.zIndex
       }
       i ++;
     }
@@ -173,6 +202,10 @@ class sliceImage{
       element.style.left = saveData[i].posX;
       element.style.top = saveData[i].posY;
       element.style.transform = saveData[i].rotate;
+      element.style.zIndex = saveData[i].zIndex;
+      //新規ピースにはzIndexの最大値より大きい値を設定する必要があるため
+      if(zIndexNum < saveData[i].zIndex)
+        zIndexNum = saveData[i].zIndex;
       i ++;
     }
 
@@ -204,42 +237,98 @@ class sliceImage{
   }
 }
 
-// グローバルでインスタンス生成
-let slice = new sliceImage({
-  imageSource: IMAGE_PATH[0],
+// グローバルでインスタンス生成　これがないと、cvsが初期化されない。後で要変更
+imgInstance = new sliceImage({
+  imageSource : IMAGE_PATH[0],
   cvs:cvs,
   pieceNumber : PIECE_NUMBER[totalPiece],
 });
 
 // main関数
-async function main(){
-
-  await slice.drawOneImage();
-  slice.slice();
-  slice.drawPieces(PIECES_ID);
-  slice.randLayout(PIECES_ID);
-
+async function drawInitImage(){
+  await imgInstance.drawOneImage();
+  await imgInstance.slice(PIECES_ID);
+  imgInstance.drawPieces(PIECES_ID);
+  imgInstance.randLayout(PIECES_ID);
 }
 
-main();
+//用意された画像をランダムで取込
+function randomImgPuzzle(){
+  if (confirm('作成中のパズルがリセットされますが、呼び出しますか？') === true){
+    let rand = Math.trunc(Math.random() * (IMAGE_PATH.length - 1)) + 1;
+
+    imgInstance = new sliceImage({
+      imageSource : IMAGE_PATH[rand],
+      cvs:cvs,
+      pieceNumber : PIECE_NUMBER[totalPiece],
+    });
+    document.form1.hint.checked = false;
+    drawInitImage();
+
+  }
+}
+
+//画像のファイル入力用DOM
+addEventListener("DOMContentLoaded", () => {
+  document.getElementById("selectImg").addEventListener("change", e => {
+
+    const reader = new FileReader();
+
+    reader.onload = e => {
+      imgInstance = new sliceImage({
+        imageSource : e.target.result,
+        cvs:cvs,
+        pieceNumber : PIECE_NUMBER[totalPiece],
+      });
+      document.form1.hint.checked = false;
+      drawInitImage();
+    }
+    reader.readAsDataURL(e.target.files[0])
+  });
+});
+
+//ヒント表示用DOM
+addEventListener('DOMContentLoaded', () => {
+
+  const triggerCheckbox = document.querySelector('input[name="hint"]');
+
+  triggerCheckbox.addEventListener("change", e => {
+    if (e.target.checked) {
+      imgInstance.hint();
+    } else {
+      imgInstance.initCVS();
+    }
+  });
+});
 
 //ローカルストレージにパズル情報を保存
 function savePiecesInfo(){
-  let saveData = slice.getImgPos(PIECES_ID);
+  let pieceData = imgInstance.getImgPos(PIECES_ID);
+  let originalData = imgInstance.image.src;
 
-  for (let i = 0; i < saveData.length; i++) saveData[i].url = slice.piecesImg[i];
-  localStorage.setItem('pieceInfo',JSON.stringify(saveData));
-
+  if(document.form1.autoSave.checked === true || confirm('パズルを保存しますか?') === true){
+    for (let i = 0; i < pieceData.length; i++) pieceData[i].url = imgInstance.piecesImg[i];
+    localStorage.setItem(LSkeyName[1],JSON.stringify(pieceData));
+    localStorage.setItem(LSkeyName[0],originalData);
+  }
 }
 
 //ローカルストレージからパズル情報を復元
-function loadPuzzle(){
+async function loadPuzzle(){
 
-  let saveData = JSON.parse(localStorage.getItem('pieceInfo'));
-  if(saveData === null){
+  let pieceData = JSON.parse(localStorage.getItem(LSkeyName[1]));
+  let originalData = localStorage.getItem(LSkeyName[0]);
+
+  if(pieceData === null){
     confirm('ローカルストレージに未保存です。')//エラー処理は後で変更する。
     return;
-  } else {
-    slice.loadImg(PIECES_ID, saveData);
+  } else if (confirm('データを呼び出しますか?') === true){
+    imgInstance.loadImg(PIECES_ID, pieceData);
+    imgInstance.image.src = originalData;
+    //画像を読み込んだ途端、下記記載なくてもonloadイベントは発火してしまう。意図的にawaitすることで、描写後初期化している。
+    document.form1.hint.checked = false;
+    await imgInstance.drawOneImage();
+    imgInstance.initCVS();
+
   }
 }
