@@ -25,8 +25,8 @@ const IMAGE_PATH = [
   './img/Sakura.webp',
 ];
 
-const CANVAS_WIDTH = 1000;
-const CANVAS_HEIGHT = CANVAS_WIDTH / 3 * 2;
+const CANVAS_WIDTH = 800;
+const CANVAS_HEIGHT = 600;
 
 // ピースを表示するdivID
 const PIECES_ID = 'pieces-storage';
@@ -275,10 +275,14 @@ class sliceImage{
   randLayout(elementID){
     let piecesElement = document.getElementById(elementID).children;
     let rand = {};
+    let randNum = {
+      x : 400 - this.pieceSize.width,
+      y : 500 - this.pieceSize.height
+    }
 
     for(let element of piecesElement){
-      rand.x = Math.trunc(Math.random() * 500);
-      rand.y = Math.trunc(Math.random() * 300);
+      rand.x = Math.trunc(Math.random() * randNum.x) + CANVAS_WIDTH;
+      rand.y = Math.trunc(Math.random() * randNum.y);
       rand.d = 90 * Math.trunc(Math.random() * 4);
       element.style.left = `${rand.x}px`;
       element.style.top = `${rand.y}px`;
