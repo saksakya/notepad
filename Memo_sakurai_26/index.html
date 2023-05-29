@@ -19,25 +19,24 @@
   <main>
 
   <div class = "canvas-wrap">
-    <canvas class="canvas"  style="border:1px solid #000000;"></canvas><br>
+    <canvas class="canvas"  style="border:2px solid #000000;"></canvas><br>
     <div id = "pieces-storage"></div>
   </div>
 
   <div id="timer">
     <span>Time : </span>
     <span id = "timerNum">00:00:00</span>
-    <button>START</button>
-    <button>STOP</button>
+    <button id = "timerSS">START</button>
     <button onclick = "savePiecesInfo()">SAVE</button>
     <button onclick =  "loadPuzzle()">LOAD</button>
     <!-- ローカルストレージの容量的に3スロットが限界(余裕を持たせて2) -->
     <select id = "slot">
-      <option value = "" selected disabled>- SAVE SLOTS- </option>
+      <option value = "" selected disabled> - SAVE SLOTS - </option>
       <option value = "1">SLOT : 01</option>
       <option value = "100">Auto Save</option>
     </select>
     <form name = "form1" >
-      <input type="checkbox" name ="hint">HINTを表示
+      <label><input type="checkbox" name ="hint">HINTを表示</label>
     </form>
   </div>
 
@@ -56,7 +55,7 @@
     <option value = "600">600ピース</option>
   </select>
 
-  <label>画像を選択<input type = "file" id ="selectImg" accept="image/*"></label>
+  <label class="chooseImg">画像を選択<input type = "file" id ="selectImg" accept="image/*"></label>
   <button class = "randP" onclick = "randomImgPuzzle()">ランダム画像</button>
 
   <script src="./js/main.js"></script>

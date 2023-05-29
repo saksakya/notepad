@@ -8,8 +8,8 @@ let target = null;
 
 function dragStart(e){
   //e.target.classList.add("drag");
-  //左クリックのみ移動可能
-  if(e.button === 0){
+  //左クリック&タイマー動作時のみ移動可能
+  if(e.button === 0 && reqAni !== null){
     startX = e.pageX - e.target.offsetLeft;
     startY = e.pageY - e.target.offsetTop;
     target = e.target;
@@ -38,7 +38,7 @@ function dragEnd(e){
   }
 }
 
-// 画像を右に回転
+// 右クリックで画像を右に回転
 function rotateImg(e){
   if(e.button === 2){
     if(e.target.style.zIndex != zIndexNum) zIndexNum++;

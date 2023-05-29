@@ -36,7 +36,7 @@ body{
   margin:0 15px 0 0;
 }
 
-#timer > button, button, label{
+#timer > button, button, .chooseImg{
   display : inline-block;
   background-color : #6495ed;
   color: white;
@@ -92,12 +92,12 @@ h1{
   height: 25px;
 }
 
-label{
+.chooseImg{
   background-color: #3eb370;
   width : 120px;
 }
 
-label > input{
+.chooseImg > input{
   display:none
 }
 
@@ -106,7 +106,7 @@ label > input{
   width : 120px;
 }
 
-label:hover, .randP:hover{
+.chooseImg:hover, .randP:hover{
   cursor:pointer;
   background-color: #246640;
 }

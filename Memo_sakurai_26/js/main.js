@@ -1,19 +1,18 @@
 /*******************
  * ToDo
  *
- * 時間の測定
- * 時間の保存
  * 完成判定
- * How to Play
+ * ドラッグで画像入力
  *
  * !!!優先度低!!!
  * confirmWindowを自作
- * 
+ * ピースの形に乱数要素
+ *
  * !!!100%不可能!!!
  *  画像の範囲選択
  *  画像の結合
  *  画像の透明部分は選択できないようにできないか
- * 
+ *
  */
 
 'use strict';
@@ -52,8 +51,9 @@ let totalPiece = 'P12';
 
 // ローカルストレージの名前の定義
 const LSkeyName = [
-  'originalImg', //オリジナルの画像
-  'pieceData'    //ピースの座標・URL情報
+  'originalImg',  //オリジナルの画像
+  'pieceData',    //ピースの座標・URL情報
+  'elapsedTime'   //経過時間
 ]
 
 // HTMLのcanvas要素
@@ -63,14 +63,17 @@ const ctx = cvs.getContext("2d");
 // howToPlayの文字列
 const DESCRIPTION_MESSAGE = [
   '- How to PLAY - ',
-  '■ピース数を選択して、「画像を選択」ボタンで好きな画像を読み込むと',
-  'パズルが生成されます。',
-  '■ピース数を選択して、「画像を選択」ボタンを押すと、サーバーに保管されている4つの画像からランダムでパズルを生成します。',
-  'OPTION',
-  '「SAVE」ボタンを押すと、現在の進捗状況を保存できます。',
-  '「LOAD」ボタンを押すと、保存した所から再開できます。',
-  '「自動保存」にチェックを入れると現在の状況が、自動で保存されます。',
-  '「ヒント」にチェックを入れるとパズル配置ウィンドにヒントが表示されます。',
+  ' 1. いずれかの方法でジグソーパズルを生成して下さい。',
+  '     ①ピース数を選択して、「画像を選択」ボタンで好きな画像を読み込む',
+  '     ②ピース数を選択して、「ランダム画像」でランダムに画像を選択',
+  ' 2. パズルを生成すると、タイマーがスタートします。',
+  ' 3. パズルを早く組み立てよう!',
+  '■ 操作方法',
+  '   左ドラッグ：パズルを移動',
+  '   右クリック：パズルを回転',
+  '  「START」「PAUSE」: タイマを一時停止・再開    停止中は操作不可',
+  '   SLOTを選択 → 「SAVE」:現在の状況を保存     「LOAD」: 読み出し',
+  '   ピースを動かすとAutoSaveスロットに自動保存されます。',
 ];
 
 //フォントサイズ置き換え用
@@ -79,8 +82,17 @@ const match = /(?<value>\d+\.?\d*)/;
 //クラスインスタンス生成用グローバル変数
 let imgInstance = null;
 
-//タイマの定義(現状不要)
-let sleep = time => new Promise(resolve => setTimeout(resolve, time));
+//requestAnimationFlameタイマー管理用
+let reqAni = null;
+
+//タイマー秒数
+let allElapsedTime = [0,0];
+
+//タイマー秒数
+let puzzleLoadedFlag = false;
+
+//TimerのDOM要素を定義
+let timerDOM = document.querySelector("#timerSS");
 
 /**************************************************************************
  * イメージを分割して描画するクラス
@@ -391,6 +403,8 @@ async function drawInitImage(){
   await imgInstance.strongSlice(PIECES_ID);
   imgInstance.drawPieces(PIECES_ID);
   imgInstance.randLayout(PIECES_ID);
+  initPuzzle();
+  howToPlay();
 }
 
 //用意された画像をランダムで取込
@@ -399,7 +413,6 @@ function randomImgPuzzle(){
     let rand = Math.trunc(Math.random() * (IMAGE_PATH.length - 1)) + 1;
 
     totalPiece = `P${document.querySelector("#totalPiece").value}`;
-
     imgInstance = new sliceImage({
       imageSource : IMAGE_PATH[rand],
       cvs:cvs,
@@ -413,7 +426,6 @@ function randomImgPuzzle(){
 //画像のファイル入力用DOM
 addEventListener("DOMContentLoaded", () => {
   document.getElementById("selectImg").addEventListener("change", e => {
-
     const reader = new FileReader();
 
     reader.onload = e => {
@@ -437,9 +449,11 @@ addEventListener('DOMContentLoaded', () => {
 
   triggerCheckbox.addEventListener("change", e => {
     if (e.target.checked) {
+      imgInstance.initCVS();
       imgInstance.hint();
     } else {
       imgInstance.initCVS();
+      howToPlay();
     }
   });
 });
@@ -448,28 +462,32 @@ addEventListener('DOMContentLoaded', () => {
 function savePiecesInfo(autoSave = false){
   let pieceData = imgInstance.getImgPos(PIECES_ID);
   let originalData = imgInstance.image.src;
-  let key0 = 0;
-  let key1 = 0;
+  let key = [];
   let slotData = document.querySelector("#slot");
 
-  if(autoSave === true){
-    key0 = `${LSkeyName[0]}100`
-    key1 = `${LSkeyName[1]}100`
-  } else if(slotData.value === ""){
-    confirm('保存スロットが選択されていません。')
-    return;
-  } else if(slotData.value === "100"){
-    confirm('Auto Saveは自動保存専用です。')
-    return;
-  } else {
-    key0 = `${LSkeyName[0]}${slotData.value}`
-    key1 = `${LSkeyName[1]}${slotData.value}`
-  }
+  if(puzzleLoadedFlag){
+    if(autoSave === true){
+      for(let i = 0; i < LSkeyName.length; i++ )
+        key[i] = `${LSkeyName[i]}100`;
+    } else if(slotData.value === ""){
+      confirm('保存スロットが選択されていません。');
+      return;
+    } else if(slotData.value === "100"){
+      confirm('Auto Saveは自動保存専用です。');
+      return;
+    } else {
+      for(let i = 0; i < LSkeyName.length; i++ )
+        key[i] = `${LSkeyName[i]}${slotData.value}`;
+    }
 
-  if(autoSave === true || confirm(`SLOT:0${slotData.value}に上書き保存しますか?`) === true){
-    for (let i = 0; i < pieceData.length; i++) pieceData[i].url = imgInstance.piecesImg[i];
-    localStorage.setItem(key1,JSON.stringify(pieceData));
-    localStorage.setItem(key0,originalData);
+    if(autoSave === true || confirm(`SLOT:0${slotData.value}に上書き保存しますか?`) === true){
+      for (let i = 0; i < pieceData.length; i++) pieceData[i].url = imgInstance.piecesImg[i];
+      localStorage.setItem(key[1],JSON.stringify(pieceData));
+      localStorage.setItem(key[0],originalData);
+      localStorage.setItem(key[2],Math.trunc(allElapsedTime[0] + allElapsedTime[1]));
+    }
+  } else {
+    confirm('パズルが生成されていません。');
   }
 }
 
@@ -478,6 +496,7 @@ async function loadPuzzle(){
   let slotData = document.querySelector("#slot");
   let pieceData = JSON.parse(localStorage.getItem(`${LSkeyName[1]}${slotData.value}`));
   let originalData = localStorage.getItem(`${LSkeyName[0]}${slotData.value}`);
+  let ET = Number(localStorage.getItem(`${LSkeyName[2]}${slotData.value}`));
 
   if(slotData.value === ""){
     confirm('スロットを選択してください。')
@@ -488,6 +507,8 @@ async function loadPuzzle(){
   } else if (confirm('データを呼び出しますか?') === true){
     imgInstance.loadImg(PIECES_ID, pieceData);
     imgInstance.image.src = originalData;
+    initPuzzle();
+    allElapsedTime[1] = ET;
 
     //ボタン数値変更
     document.form1.hint.checked = false;
@@ -495,26 +516,72 @@ async function loadPuzzle(){
     //img srcで画像を読み込んだ瞬間、下記記載なくてもonloadイベントが発火してしまう。意図的にawaitすることで、描写後初期化している。
     await imgInstance.drawOneImage();
     imgInstance.initCVS();
+    howToPlay();
   }
 }
 
+//upperTimer
+timerDOM.addEventListener('click', () => {
 
-// テスト用関数
-async function drawInitImage(){
-  await imgInstance.drawOneImage();
-  await imgInstance.strongSlice(PIECES_ID);
-  imgInstance.drawPieces(PIECES_ID);
-  imgInstance.randLayout(PIECES_ID);
+  let startTime = performance.now();
+  let showTime = document.querySelector("#timerNum")
+  let elapsedTime = {};
+  let reqAniCopy = reqAni;
+
+  if(puzzleLoadedFlag){
+    timerDOM.textContent = "PAUSE"
+    if(reqAni === null){
+      let elapsedTimer = () =>{
+        //時間表示
+        allElapsedTime[0] = performance.now() - startTime;
+        elapsedTime.totalSec = Math.trunc((allElapsedTime[0] + allElapsedTime[1])/1000);
+        elapsedTime.sec = Math.trunc(elapsedTime.totalSec % 60).toString().padStart(2,'0');
+        elapsedTime.min = Math.trunc(elapsedTime.totalSec % 3600 / 60).toString().padStart(2,'0');
+        elapsedTime.hour = Math.trunc(elapsedTime.totalSec / 3600).toString().padStart(2,'0');
+        elapsedTime.time = `${elapsedTime.hour}:${elapsedTime.min}:${elapsedTime.sec}`;
+        showTime.textContent = elapsedTime.time;
+        reqAni = requestAnimationFrame(elapsedTimer);
+      }
+      elapsedTimer();
+    }
+
+    if(reqAniCopy !== null){
+      allElapsedTime[1] += allElapsedTime[0]
+      cancelAnimationFrame(reqAni);
+      timerDOM.textContent = "START"
+      reqAni = null;
+    }
+  } else {
+    confirm('先にパズルを生成して下さい。');
+  }
+})
+
+//パズル生成時の変数初期化
+function initPuzzle(){
+  allElapsedTime = [0,0];
+  puzzleLoadedFlag = true;
+
+  //タイマー稼働中なら停止
+  if(reqAni !== null)
+    timerDOM.click();
+
+  //新規タイマースタート
+  timerDOM.click();
+
 }
+
+//howToPlayをcanvas要素に表示
+function howToPlay(){
+  ctx.font = '40px "M PLUS 1p", sans-serif';
+  ctx.fillText(DESCRIPTION_MESSAGE[0] , 40 , 60)
+  ctx.font = ctx.font.replace(match, 19)
+
+  for (let i = 1; i < 12; i++)
+    ctx.fillText(DESCRIPTION_MESSAGE[i] ,60 , 70 + i * 45);
+}
+
+howToPlay();
+
+//テスト用
 //drawInitImage();
 
-//テスト用関数2
-// function howToPlay(){
-//   ctx.font = '40px "M PLUS 1p", sans-serif';
-//   ctx.fillText(DESCRIPTION_MESSAGE[0] , 50 , 100)
-//   ctx.font = ctx.font.replace(match, 20)
-  
-//   ctx.fillText(DESCRIPTION_MESSAGE[1] , 80 , 160)
-// }
-
-// howToPlay();
