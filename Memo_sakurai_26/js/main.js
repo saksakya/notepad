@@ -1,18 +1,7 @@
 /*******************
  * ToDo
- *
- * 完成判定
+ * 完成フラグを変数で立てる。固定フラグの保存
  * ドラッグで画像入力
- *
- * !!!優先度低!!!
- * confirmWindowを自作
- * ピースの形に乱数要素
- *
- * !!!100%不可能!!!
- *  画像の範囲選択
- *  画像の結合
- *  画像の透明部分は選択できないようにできないか
- *
  */
 
 'use strict';
@@ -46,8 +35,8 @@ const PIECE_NUMBER = {
   P600 : {horizontal : 30 , vertical : 20},
 };
 
-// 総ピース数、初期値テスト用
-let totalPiece = 'P12';
+// 総ピース数、初期値はテスト用に24ピース
+let totalPiece = 'P24';
 
 // ローカルストレージの名前の定義
 const LSkeyName = [
@@ -111,6 +100,7 @@ class sliceImage{
     this.initCVS();
     this.calPieceSize();
     this.piecesImg = [];
+    this.initialPos = [];
     //this.imageScale();ここで初期化しようとすると、widthとheightが未取得のことがあるため没 slice内で分割時に初期化
   }
 
@@ -186,10 +176,9 @@ class sliceImage{
     let c1Width = width / 4 * 1;        // 制御点1(w)
 
     //乱数を使って、制御点に揺らぎを持たせたかったが、受け側と揺らぎを合わせるために配列に保管の必要あり
-    //時間がなくて断念
+    //テストする時間がなくて断念
     // let c1Width = () => {
-    //   let tempRand
-    //   tempRand = 1.05 - Math.random() / 10 //0.95-1.05の揺らぎを持たせる
+    //   let tempRand = 1.05 - Math.random() / 10 //0.95-1.05の揺らぎを持たせる
     //   return width / 4 * 1 * tempRand;
     // }
 
@@ -202,6 +191,8 @@ class sliceImage{
     //ピースの大きさ+ピースの出っ張り分の合計の大きさ
     let grossWidth = width + bumpWidth * 2;
     let grossHeight = height + bumpHeight * 2
+
+    let initialPos = {}; //パズルの初期位置
 
     //canvas要素をピースの大きさ+ピースの出っ張り分へ補正
     this.cvs.width = grossWidth;
@@ -282,10 +273,18 @@ class sliceImage{
 
         this.ctx.clip();
 
-          this.ctx.drawImage(this.image, (width * j - bumpWidth) * this.scale.width ,(height * i - bumpHeight) * this.scale.height,
-            grossWidth * this.scale.width, grossHeight * this.scale.height, 0 , 0 , grossWidth, grossHeight);
+        this.ctx.drawImage(this.image, (width * j - bumpWidth) * this.scale.width ,(height * i - bumpHeight) * this.scale.height,
+          grossWidth * this.scale.width, grossHeight * this.scale.height, 0 , 0 , grossWidth, grossHeight);
 
-            this.piecesImg.push(cvs.toDataURL());
+        this.ctx.lineWidth = 1;
+        this.ctx.stroke();
+
+        initialPos.x = width * j - bumpWidth;
+        initialPos.y = height * i - bumpHeight;
+
+        this.initialPos.push(JSON.parse(JSON.stringify(initialPos)));//値渡し
+        this.piecesImg.push(cvs.toDataURL());
+
         //変数等初期化
         this.ctx.restore();
         this.ctx.clearRect(0,0,grossWidth,grossHeight);
@@ -312,6 +311,16 @@ class sliceImage{
     }
   }
 
+  removeEvent(elementID,i){
+    let img = document.getElementById(elementID).children;
+    img[i].removeEventListener("mousedown", dragStart);
+    img[i].removeEventListener("contextmenu", rotateImg);
+    img[i].style.left = `${this.initialPos[i].x}px`;
+    img[i].style.top = `${this.initialPos[i].y}px`;
+    img[i].style.zIndex = 1;
+    img[i].style.pointerEvents = 'none';
+  }
+
   // 表示した画像をランダムに配置
   randLayout(elementID){
     let piecesElement = document.getElementById(elementID).children;
@@ -325,9 +334,11 @@ class sliceImage{
       rand.x = Math.trunc(Math.random() * randNum.x) + CANVAS_WIDTH;
       rand.y = Math.trunc(Math.random() * randNum.y);
       rand.d = 90 * Math.trunc(Math.random() * 4);
+      rand.z = Math.trunc(Math.random() * 99) + 1;
       element.style.left = `${rand.x}px`;
       element.style.top = `${rand.y}px`;
       element.style.transform = `rotate(${rand.d}deg)`;
+      element.style.zIndex = rand.z;
     }
   }
 
@@ -353,8 +364,10 @@ class sliceImage{
   loadImg(elementID, saveData){
     this.removeChild(elementID);
     this.piecesImg = []; //配列初期化
-    for(let i = 0; i < saveData.length; i++)
+    for(let i = 0; i < saveData.length; i++){
       this.piecesImg[i] = saveData[i].url;
+      this.initialPos[i] = saveData[i].initialPos;
+    }
 
     this.drawPieces(elementID);
 
@@ -481,7 +494,11 @@ function savePiecesInfo(autoSave = false){
     }
 
     if(autoSave === true || confirm(`SLOT:0${slotData.value}に上書き保存しますか?`) === true){
-      for (let i = 0; i < pieceData.length; i++) pieceData[i].url = imgInstance.piecesImg[i];
+      for (let i = 0; i < pieceData.length; i++) {
+        pieceData[i].url = imgInstance.piecesImg[i];
+        pieceData[i].initialPos = imgInstance.initialPos[i];
+      }
+
       localStorage.setItem(key[1],JSON.stringify(pieceData));
       localStorage.setItem(key[0],originalData);
       localStorage.setItem(key[2],Math.trunc(allElapsedTime[0] + allElapsedTime[1]));
