@@ -18,6 +18,7 @@ function dragStart(e){
     //let shiftY = event.clientY - ball.getBoundingClientRect().top;
     //target.style.position = 'absolute'
     //document.body.append(target);
+    //console.log(zIndexNum);
   }
 }
 
@@ -32,7 +33,7 @@ function moveAt(e){
 // 移動後に初期化・オートセーブ
 function dragEnd(e){
   if(target){
-    checkInitialPos(e);
+    matchingPos(e.target);
     target = null;
     savePiecesInfo(true);
     //console.log('autosaveFlag')
@@ -42,7 +43,7 @@ function dragEnd(e){
 
 // 右クリックで画像を右に回転
 function rotateImg(e){
-  if(e.button === 2){
+  if(e.button === 2 && reqAni !== null){
     if(e.target.style.zIndex != zIndexNum) zIndexNum++;
     e.target.style.zIndex = zIndexNum;
     let rotate = Number(e.target.style.transform.replace(/[^0-9]/g, ''));
@@ -50,7 +51,7 @@ function rotateImg(e){
     if(rotate >= 360) rotate -= 360;
     e.target.style.transform = `rotate(${rotate}deg)`;
   }
-  checkInitialPos(e);
+  matchingPos(e.target);
 }
 
 // mousemove で移動
@@ -60,20 +61,20 @@ document.addEventListener("mouseup",dragEnd);
 
 
 //初期位置かどうか確認する関数
-function checkInitialPos (e){
+function matchingPos (e){
   let piecesImg = document.getElementById(PIECES_ID).children
   const allow = 10;
   let iPos = {};
   let i = 0;
 
   let pPos= {
-    x : parseInt(e.target.style.left) ,
-    y : parseInt(e.target.style.top) ,
-    rotate : Number(e.target.style.transform.replace(/[^0-9]/g, ''))
+    x : parseInt(e.style.left) ,
+    y : parseInt(e.style.top) ,
+    rotate : Number(e.style.transform.replace(/[^0-9]/g, ''))
   }
 
   for(let element of piecesImg){
-    if(element === e.target) {
+    if(element === e) {
       iPos = imgInstance.initialPos[i];
       break;
     }
@@ -86,6 +87,11 @@ function checkInitialPos (e){
       pPos.rotate == 0){
 
         imgInstance.removeEvent(PIECES_ID, i);//画像固定
+        fixedPiecesNumber ++;
+
+        if(fixedPiecesNumber >= piecesImg.length){
+          completePuzzle();
+        }
   }
 
 }

@@ -1,6 +1,6 @@
 /*******************
  * ToDo
- * 完成フラグを変数で立てる。固定フラグの保存
+ * パズル完成時に、タイマーストップ、＋完成のエフェクト
  * ドラッグで画像入力
  */
 
@@ -80,8 +80,13 @@ let allElapsedTime = [0,0];
 //タイマー秒数
 let puzzleLoadedFlag = false;
 
+//正しい位置にあるピースの数
+let fixedPiecesNumber = 0;
+
 //TimerのDOM要素を定義
 let timerDOM = document.querySelector("#timerSS");
+
+const sleep = time => new Promise(resolve => setTimeout(resolve, time));//タイマとして使用
 
 /**************************************************************************
  * イメージを分割して描画するクラス
@@ -305,6 +310,7 @@ class sliceImage{
       img.addEventListener("mousedown", dragStart);//mousedownイベントを各img要素に仕込む
       img.addEventListener("contextmenu", rotateImg);//右クリックは回転
       img.setAttribute("oncontextmenu" , "return false");//画像上は右クリックメニュー禁止
+      img.style.userSelect = 'none';
 
       img.ondragstart = () => false;//ondragイベントがmousedownイベントと競合するため無効にする。
       piecesContents.appendChild(img);
@@ -364,6 +370,7 @@ class sliceImage{
   loadImg(elementID, saveData){
     this.removeChild(elementID);
     this.piecesImg = []; //配列初期化
+
     for(let i = 0; i < saveData.length; i++){
       this.piecesImg[i] = saveData[i].url;
       this.initialPos[i] = saveData[i].initialPos;
@@ -382,6 +389,7 @@ class sliceImage{
       //新規ピースにはzIndexの最大値より大きい値を設定する必要があるため
       if(zIndexNum < saveData[i].zIndex)
         zIndexNum = saveData[i].zIndex;
+      matchingPos(element);
       i ++;
     }
 
@@ -522,9 +530,9 @@ async function loadPuzzle(){
     confirm('データ未保存です。')
     return;
   } else if (confirm('データを呼び出しますか?') === true){
+    initPuzzle();
     imgInstance.loadImg(PIECES_ID, pieceData);
     imgInstance.image.src = originalData;
-    initPuzzle();
     allElapsedTime[1] = ET;
 
     //ボタン数値変更
@@ -576,6 +584,7 @@ timerDOM.addEventListener('click', () => {
 //パズル生成時の変数初期化
 function initPuzzle(){
   allElapsedTime = [0,0];
+  fixedPiecesNumber = 0;
   puzzleLoadedFlag = true;
 
   //タイマー稼働中なら停止
@@ -585,6 +594,12 @@ function initPuzzle(){
   //新規タイマースタート
   timerDOM.click();
 
+}
+
+//作成中！！！
+async function completePuzzle(){
+  await sleep(200);
+  confirm('完成です！！！！！');
 }
 
 //howToPlayをcanvas要素に表示
