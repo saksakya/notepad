@@ -1,6 +1,5 @@
 /*******************
  * ToDo
- * パズル完成時に、タイマーストップ、＋完成のエフェクト
  * ドラッグで画像入力
  */
 
@@ -429,8 +428,15 @@ async function drawInitImage(){
 }
 
 //用意された画像をランダムで取込
-function randomImgPuzzle(){
-  if (confirm('作成中のパズルがリセットされますが、呼び出しますか？') === true){
+async function randomImgPuzzle(){
+  let modal = new controlModal({
+    modalID : 'modal-1',
+    modalTitle : '確認',
+    modalContents : '作成中のパズルがリセットされますが、呼び出しますか？'
+  });
+
+  if (puzzleLoadedFlag === false || await modal.confirm()){
+  //if (confirm('作成中のパズルがリセットされますが、呼び出しますか？') === true){
     let rand = Math.trunc(Math.random() * (IMAGE_PATH.length - 1)) + 1;
 
     totalPiece = `P${document.querySelector("#totalPiece").value}`;
@@ -480,28 +486,42 @@ addEventListener('DOMContentLoaded', () => {
 });
 
 //ローカルストレージにパズル情報を保存
-function savePiecesInfo(autoSave = false){
+async function savePiecesInfo(autoSave = false){
   let pieceData = imgInstance.getImgPos(PIECES_ID);
   let originalData = imgInstance.image.src;
   let key = [];
   let slotData = document.querySelector("#slot");
+
+  let modal = new controlModal({
+    modalID : 'modal-1',
+    modalTitle : '確認',
+    modalContents : `SLOT:0${slotData.value}に上書き保存しますか?`
+  });
+
+  let modal2 = new controlModal({
+    modalID : 'modal-2',
+    modalTitle : 'Warning',
+    modalContents : '保存スロットが選択されていません。'
+  });
 
   if(puzzleLoadedFlag){
     if(autoSave === true){
       for(let i = 0; i < LSkeyName.length; i++ )
         key[i] = `${LSkeyName[i]}100`;
     } else if(slotData.value === ""){
-      confirm('保存スロットが選択されていません。');
+      await modal2.confirm();
       return;
     } else if(slotData.value === "100"){
-      confirm('Auto Saveは自動保存専用です。');
+      modal2.modalContents = 'Auto Saveは自動保存専用です。';
+      await modal2.confirm();
       return;
     } else {
       for(let i = 0; i < LSkeyName.length; i++ )
         key[i] = `${LSkeyName[i]}${slotData.value}`;
     }
 
-    if(autoSave === true || confirm(`SLOT:0${slotData.value}に上書き保存しますか?`) === true){
+    if(autoSave === true || await modal.confirm()){
+    //if(autoSave === true || confirm(`SLOT:0${slotData.value}に上書き保存しますか?`) === true){
       for (let i = 0; i < pieceData.length; i++) {
         pieceData[i].url = imgInstance.piecesImg[i];
         pieceData[i].initialPos = imgInstance.initialPos[i];
@@ -512,7 +532,8 @@ function savePiecesInfo(autoSave = false){
       localStorage.setItem(key[2],Math.trunc(allElapsedTime[0] + allElapsedTime[1]));
     }
   } else {
-    confirm('パズルが生成されていません。');
+    modal2.modalContents = 'パズルが生成されていません。';
+    await modal2.confirm();
   }
 }
 
@@ -523,13 +544,34 @@ async function loadPuzzle(){
   let originalData = localStorage.getItem(`${LSkeyName[0]}${slotData.value}`);
   let ET = Number(localStorage.getItem(`${LSkeyName[2]}${slotData.value}`));
 
+  let name = null;
+
+  if (slotData.value === '100') {
+    name = 'Auto Save';
+  } else{
+    name = `SLOT:0${slotData.value}`;
+  }
+
+  let modal = new controlModal({
+    modalID : 'modal-1',
+    modalTitle : '確認',
+    modalContents : `${name}のデータを呼び出しますか?`
+  });
+
+  let modal2 = new controlModal({
+    modalID : 'modal-2',
+    modalTitle : 'Warning',
+    modalContents : 'スロットを選択して下さい。'
+  });
+
   if(slotData.value === ""){
-    confirm('スロットを選択してください。')
+    await modal2.confirm();
     return;
   } else if(pieceData === null){
-    confirm('データ未保存です。')
+    modal2.modalContents = 'データ未保存です。';
+    await modal2.confirm();
     return;
-  } else if (confirm('データを呼び出しますか?') === true){
+  } else if (await modal.confirm()){
     initPuzzle();
     imgInstance.loadImg(PIECES_ID, pieceData);
     imgInstance.image.src = originalData;
@@ -553,18 +595,20 @@ timerDOM.addEventListener('click', () => {
   let elapsedTime = {};
   let reqAniCopy = reqAni;
 
+  let modal = new controlModal({
+    modalID : 'modal-2',
+    modalTitle : 'Warning',
+    modalContents : '先にパズルを生成して下さい。'
+  });
+
   if(puzzleLoadedFlag){
     timerDOM.textContent = "PAUSE"
     if(reqAni === null){
       let elapsedTimer = () =>{
         //時間表示
         allElapsedTime[0] = performance.now() - startTime;
-        elapsedTime.totalSec = Math.trunc((allElapsedTime[0] + allElapsedTime[1])/1000);
-        elapsedTime.sec = Math.trunc(elapsedTime.totalSec % 60).toString().padStart(2,'0');
-        elapsedTime.min = Math.trunc(elapsedTime.totalSec % 3600 / 60).toString().padStart(2,'0');
-        elapsedTime.hour = Math.trunc(elapsedTime.totalSec / 3600).toString().padStart(2,'0');
-        elapsedTime.time = `${elapsedTime.hour}:${elapsedTime.min}:${elapsedTime.sec}`;
-        showTime.textContent = elapsedTime.time;
+        elapsedTime.totalSec = Math.trunc((allElapsedTime[0] + allElapsedTime[1]));
+        showTime.textContent = calculateTime(elapsedTime.totalSec);
         reqAni = requestAnimationFrame(elapsedTimer);
       }
       elapsedTimer();
@@ -577,9 +621,22 @@ timerDOM.addEventListener('click', () => {
       reqAni = null;
     }
   } else {
-    confirm('先にパズルを生成して下さい。');
+    //confirm('先にパズルを生成して下さい。');
+    modal.confirm();
   }
 })
+
+function calculateTime(totalMSec){
+  let elapsedTime = {};
+  let totalSec = totalMSec / 1000;
+
+  elapsedTime.sec = Math.trunc(totalSec % 60).toString().padStart(2,'0');
+  elapsedTime.min = Math.trunc(totalSec % 3600 / 60).toString().padStart(2,'0');
+  elapsedTime.hour = Math.trunc(totalSec / 3600).toString().padStart(2,'0');
+  elapsedTime.time = `${elapsedTime.hour}:${elapsedTime.min}:${elapsedTime.sec}`;
+
+  return elapsedTime.time;
+}
 
 //パズル生成時の変数初期化
 function initPuzzle(){
@@ -596,10 +653,20 @@ function initPuzzle(){
 
 }
 
-//作成中！！！
+//パズル完成時
 async function completePuzzle(){
+  //タイマーストップ
+  timerDOM.click();
+
   await sleep(200);
-  confirm('完成です！！！！！');
+
+  let modal = new controlModal({
+    modalID : 'modal-2',
+    modalTitle : 'Congratulations!',
+    modalContents : `あなたのパズル完成時間は${calculateTime(allElapsedTime[1])}でした。`
+  });
+
+  await modal.confirm();
 }
 
 //howToPlayをcanvas要素に表示
@@ -610,10 +677,10 @@ function howToPlay(){
 
   for (let i = 1; i < 12; i++)
     ctx.fillText(DESCRIPTION_MESSAGE[i] ,60 , 70 + i * 45);
+
 }
 
 howToPlay();
 
 //テスト用
 //drawInitImage();
-
