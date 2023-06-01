@@ -1,5 +1,8 @@
 # 課題　 -メモ帳アプリ-
 
+## DEMO
+https://saksakya.github.io/notepad/
+
 ## ①課題内容（どんな作品か）
 - 好きな画像を読み込んでジグソーパズルを生成するアプリです。
 - パズルが生成されるとタイマーがスタートするので、パズルを早く組み立てる。
@@ -23,5 +26,5 @@
 質問：ピースの形を複雑にしたせいで画像の透明部分が大きくなってしまい、一部ボタンを覆ってしまったり、z-indexが下の図形を拾えなくなったり不都合が生じています。svgもしくは、クリッカブルマップを使えば透過部分を無視できるように出来るのでしょうか。色々調べましたが、全く方法が分かりません。
 
 ［参考サイト］
-  https://www.m3tech.blog/entry/2022/05/18/110000
-  https://ja.javascript.info/mouse-drag-and-drop
+ - https://www.m3tech.blog/entry/2022/05/18/110000
+ - https://ja.javascript.info/mouse-drag-and-drop
