@@ -1,31 +1,31 @@
 /*************************************************************
  * ファイルドラッグアンドドロップ入力用
  * @param inputImgArea : HTML要素のドラッグが反応するIDを指定
- * @param selecImg : HTML要素のinput要素のIDを指定
+ * @param selectImg : HTML要素のinput要素のIDを指定
 *************************************************************/
 
 'use strict';
 
-const inputImgArea = document.querySelector('#dropArea');
-const selectFile = document.querySelector('#selectImg')
+const DROP_AREA = document.querySelector('#pieces-storage');
+const SELECT_FILE = document.querySelector('#selectImg')
 
-inputImgArea.addEventListener('dragover', e =>  {
+DROP_AREA.addEventListener('dragover', e =>  {
 	e.preventDefault();
-	e.target.style.backgroundColor = '#80ff80';
+	e.currentTarget.style.backgroundColor = ' #6495ed ';
 });
-inputImgArea.addEventListener('dragleave', e => {
-	e.target.style.backgroundColor = '';
+DROP_AREA.addEventListener('dragleave', e => {
+	e.currentTarget.style.backgroundColor = '';
 });
-inputImgArea.addEventListener('drop', e => {
+DROP_AREA.addEventListener('drop', e => {
 	e.preventDefault();
-	e.target.style.backgroundColor = '';
+	e.currentTarget.style.backgroundColor = '';
 	if (e.dataTransfer.files.length > 0) {
-		selectFile.files = e.dataTransfer.files;
-		selectFile.dispatchEvent(new Event('change'));
+		SELECT_FILE.files = e.dataTransfer.files;
+		SELECT_FILE.dispatchEvent(new Event('change'));
 	}
 });
 
-selectFile.addEventListener('change', e => {
+SELECT_FILE.addEventListener('change', e => {
 	//読み込まれたときの処理を記述する。
 	selectFileProcessing(e);
 });
