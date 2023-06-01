@@ -1,8 +1,3 @@
-/*******************
- * ToDo
- * ドラッグで画像入力
- */
-
 'use strict';
 
 // パズル用の画像パスの定義
@@ -23,7 +18,7 @@ const PIECES_ID = 'pieces-storage';
 
 // ピース数定義
 const PIECE_NUMBER = {
-  P4 : {horizontal : 2 , vertical : 2},//テスト用
+  P4 : {horizontal : 2 , vertical : 2},
   P12 : {horizontal : 4 , vertical : 3},
   P24 : {horizontal : 6 , vertical : 4},
   P48 : {horizontal : 8 , vertical : 6},
@@ -51,9 +46,10 @@ const ctx = cvs.getContext("2d");
 // howToPlayの文字列
 const DESCRIPTION_MESSAGE = [
   '- How to PLAY - ',
-  ' 1. いずれかの方法でジグソーパズルを生成して下さい。',
-  '     ①ピース数を選択して、「画像を選択」ボタンで好きな画像を読み込む',
-  '     ②ピース数を選択して、「ランダム画像」でランダムに画像を選択',
+  ' 1. ピース数を選択して、いずれかの方法でジグソーパズルを生成して下さい。',
+  '     ① この部分にドラッグ&ドロップして好きな画像を読み込む',
+  '     ②「画像を選択」ボタンで好きな画像を読み込む',
+  '     ③「ランダム画像」でランダムに画像を選択',
   ' 2. パズルを生成すると、タイマーがスタートします。',
   ' 3. パズルを早く組み立てよう!',
   '■ 操作方法',
@@ -61,7 +57,7 @@ const DESCRIPTION_MESSAGE = [
   '   右クリック：パズルを回転',
   '  「START」「PAUSE」: タイマを一時停止・再開    停止中は操作不可',
   '   SLOTを選択 → 「SAVE」:現在の状況を保存     「LOAD」: 読み出し',
-  '   ピースを動かすとAutoSaveスロットに自動保存されます。',
+  //'   ピースを動かすとAutoSaveスロットに自動保存されます。',
 ];
 
 //フォントサイズ置き換え用
@@ -450,10 +446,18 @@ async function randomImgPuzzle(){
   }
 }
 
-//画像のファイル入力用DOM
-addEventListener("DOMContentLoaded", () => {
-  document.getElementById("selectImg").addEventListener("change", e => {
-    const reader = new FileReader();
+
+//外部画像読み込み用関数
+async function selectFileProcessing(e){
+  let modal = new controlModal({
+    modalID : 'modal-1',
+    modalTitle : '確認',
+    modalContents : '作成中のパズルがリセットされますが、呼び出しますか？'
+  });
+
+  const reader = new FileReader();
+
+  if (puzzleLoadedFlag === false || await modal.confirm()){
 
     reader.onload = e => {
       totalPiece = `P${document.querySelector("#totalPiece").value}`;
@@ -466,8 +470,9 @@ addEventListener("DOMContentLoaded", () => {
       drawInitImage();
     }
     reader.readAsDataURL(e.target.files[0])
-  });
-});
+  }
+
+}
 
 //ヒント表示用DOM
 addEventListener('DOMContentLoaded', () => {

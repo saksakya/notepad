@@ -1,3 +1,8 @@
+/********************************************
+ * マイクロモダル用クラス設定を記述
+ * 使用例は46行目以降参照
+*********************************************/
+
 class controlModal{
   constructor({
     modalID,
@@ -39,15 +44,15 @@ class controlModal{
 
 }
 
-//使用例
-function buttonClick(){
-  let modal = new controlModal({
-    modalID : 'modal-1',
-    modalTitle : '確認画面',
-    modalContents : 'あなたは天才ですか？それとも秀才ですか'
-  });
+//使用例を書きに記述 await処理が必要な場合 async functionで宣言すること。
+// function buttonClick(){
+//   let modal = new controlModal({
+//     modalID : 'modal-1',
+//     modalTitle : '確認画面',
+//     modalContents : 'あなたは天才ですか？それとも秀才ですか'
+//   });
 
-  let flag
-  flag = modal.confirm();
-  //console.log(test);
-}
+//   let flag
+//   flag = modal.confirm();
+//   //console.log(test);
+// }
